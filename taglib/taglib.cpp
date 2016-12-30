@@ -8,6 +8,7 @@
 
 // Global Variables:
 HINSTANCE hInst;								// current instance
+HWND g_hwnd;
 TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 
@@ -18,7 +19,10 @@ LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
 //
-VOID win32FuncLearn();
+HWND GetHWND();
+VOID Win32FuncLearn();
+VOID ReadPrgProperty(HWND hWnd);
+VOID WritePrgProperty();
 
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -101,6 +105,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    HWND hWnd;
 
    hInst = hInstance; // Store instance handle in our global variable 
+
    hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW | WS_HSCROLL,
 	   CW_USEDEFAULT, CW_USEDEFAULT, 500, 300, NULL, NULL, hInstance, NULL);
 
@@ -108,8 +113,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    {
       return FALSE;
    }
+   
+   g_hwnd = hWnd;
 
-   //win32FuncLearn();
+   //Win32FuncLearn();
+      //read prev properties
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
@@ -135,6 +143,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
+	case WM_CREATE:
+		ReadPrgProperty(hWnd);
+		break;
 	case WM_COMMAND:
 		wmId    = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
@@ -154,9 +165,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
 		// TODO: Add any drawing code here...
+		
 		EndPaint(hWnd, &ps);
 		break;
 	case WM_DESTROY:
+		WritePrgProperty();
 		PostQuitMessage(0);
 		break;
 	default:
@@ -185,10 +198,30 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	return (INT_PTR)FALSE;
 }
 
-VOID win32FuncLearn()
+HWND GetHWND()
+{
+	assert(g_hwnd);
+	return g_hwnd;
+}
+
+VOID Win32FuncLearn()
 {
 	DWORD retval = 0;
 	CString filePath = "/select, D:\\cpp\\win32\\taglib\\Debug\\taglib.exe";
 
 	ShellExecute(NULL, _T("open"), _T("explorer.exe"), LPCTSTR(filePath), NULL, SW_SHOWNORMAL);
+}
+
+VOID WritePrgProperty()
+{
+	WINDOWPLACEMENT wp;
+	GetWindowPlacement(GetHWND(), &wp);
+	WritePrivateProfileStruct(L"Main", L"WP", &wp, sizeof(wp), _T("D:\\work\\cpp\\taglib\\Debug\\taglib.ini"));
+}
+
+VOID ReadPrgProperty(HWND hWnd)
+{
+	WINDOWPLACEMENT wp;
+	GetPrivateProfileStruct(L"Main", L"WP", &wp, sizeof(wp), _T("D:\\work\\cpp\\taglib\\Debug\\taglib.ini"));
+	SetWindowPlacement(hWnd, &wp);
 }
