@@ -17,6 +17,9 @@ BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
+//
+VOID win32FuncLearn();
+
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPTSTR    lpCmdLine,
@@ -97,15 +100,16 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    HWND hWnd;
 
-   hInst = hInstance; // Store instance handle in our global variable
-
-   hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
+   hInst = hInstance; // Store instance handle in our global variable 
+   hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW | WS_HSCROLL,
+	   CW_USEDEFAULT, CW_USEDEFAULT, 500, 300, NULL, NULL, hInstance, NULL);
 
    if (!hWnd)
    {
       return FALSE;
    }
+
+   //win32FuncLearn();
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
@@ -179,4 +183,12 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 	return (INT_PTR)FALSE;
+}
+
+VOID win32FuncLearn()
+{
+	DWORD retval = 0;
+	CString filePath = "/select, D:\\cpp\\win32\\taglib\\Debug\\taglib.exe";
+
+	ShellExecute(NULL, _T("open"), _T("explorer.exe"), LPCTSTR(filePath), NULL, SW_SHOWNORMAL);
 }
