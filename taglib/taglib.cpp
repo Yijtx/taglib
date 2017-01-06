@@ -23,6 +23,12 @@ HWND GetHWND();
 VOID Win32FuncLearn();
 VOID ReadPrgProperty(HWND hWnd);
 VOID WritePrgProperty();
+VOID OpenPath(PTSTR path);
+
+VOID testWinFile();
+VOID testCopyFile();
+
+
 
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -121,6 +127,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
+
+   testWinFile();
+   testCopyFile();
 
    return TRUE;
 }
@@ -224,4 +233,49 @@ VOID ReadPrgProperty(HWND hWnd)
 	WINDOWPLACEMENT wp;
 	GetPrivateProfileStruct(L"Main", L"WP", &wp, sizeof(wp), _T("D:\\work\\cpp\\taglib\\Debug\\taglib.ini"));
 	SetWindowPlacement(hWnd, &wp);
+}
+
+VOID testWinFile()
+{
+	CWinFile winFile;
+	winFile.Open(TEXT("D:\\work\\cpp\\taglib\\taglib\\test.txt"));
+
+	LONGLONG pos = winFile.GetPtrPos();
+	TCHAR data[] = TEXT("My name is Yijtx\r\n");
+	TCHAR chData[] = TEXT("我是Yijtx");
+	DWORD writeen;
+	WORD a = 0xFEFF;
+	winFile.Write(&a, sizeof(a), &writeen);//在写入前插入0xFEFF，让系统认为是Unicode编码。
+	winFile.Write(data, lstrlen(data)*sizeof(TCHAR), &writeen);
+	winFile.Write(chData, lstrlen(chData)*sizeof(TCHAR), &writeen);
+	pos = winFile.GetPtrPos();
+	winFile.Close();
+
+	TCHAR userHome[MAX_PATH];
+	ZeroMemory(userHome, _tcslen(userHome));
+	winFile.GetSpecialFolder(CSIDL_USER_WINDOWS, userHome);
+}
+
+VOID testCopyFile()
+{
+	CWinFile srcFile, dstFile;
+	LONGLONG pos = 0;
+	srcFile.Open(TEXT("D:\\work\\cpp\\taglib\\taglib\\test.txt"));
+	TCHAR buf[BUFSIZE];
+	ZeroMemory(buf, BUFSIZE);
+
+	srcFile.Read(buf, 1024);
+	pos = srcFile.GetPtrPos();
+	srcFile.SetPtrPosBegin();
+	pos = srcFile.GetPtrPos();
+
+	dstFile.OpenNew(TEXT("D:\\work\\cpp\\taglib\\taglib\\test_d.txt"));
+	dstFile.CopyFile(srcFile.GetHandle());
+	pos = dstFile.GetPtrPos();
+	printf("%d", pos);
+}
+
+VOID OpenPath(PTSTR path)
+{
+	ShellExecute(NULL, _T("open"), _T("explorer.exe"), LPCTSTR(path), NULL, SW_SHOWNORMAL);
 }

@@ -11,6 +11,7 @@
 // Windows Header Files:
 #include <windows.h>
 #include <shellapi.h>
+#include <ShlObj.h>
 
 
 // C RunTime Header Files
@@ -26,3 +27,7 @@
 
 // BUFSIZE
 #define BUFSIZE 4096
+
+
+// WinFile
+#include "WinFile.h"
