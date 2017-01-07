@@ -23,7 +23,7 @@ HWND GetHWND();
 VOID Win32FuncLearn();
 VOID ReadPrgProperty(HWND hWnd);
 VOID WritePrgProperty();
-VOID OpenPath(PTSTR path);
+VOID OpenPath(LPCTSTR path);
 
 VOID testWinFile();
 VOID testCopyFile();
@@ -270,12 +270,15 @@ VOID testCopyFile()
 	pos = srcFile.GetPtrPos();
 
 	dstFile.OpenNew(TEXT("D:\\work\\cpp\\taglib\\taglib\\test_d.txt"));
+	//OpenPath(dstFile.GetPath());
 	dstFile.CopyFile(srcFile.GetHandle());
 	pos = dstFile.GetPtrPos();
 	printf("%d", pos);
 }
 
-VOID OpenPath(PTSTR path)
+VOID OpenPath(LPCTSTR path)
 {
-	ShellExecute(NULL, _T("open"), _T("explorer.exe"), LPCTSTR(path), NULL, SW_SHOWNORMAL);
+	TCHAR selecPath[MAX_PATH] = TEXT("/select, ");
+	_tcscat(selecPath, path);
+	ShellExecute(NULL, _T("open"), _T("explorer.exe"), selecPath, NULL, SW_SHOWNORMAL);
 }
