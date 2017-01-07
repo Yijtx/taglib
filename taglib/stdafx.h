@@ -51,13 +51,7 @@
 #include <stlsoft/smartptr/ref_ptr.hpp>         // for stlsoft::ref_ptr (steps 2, 2.1 and 2.3)
 
 //pantheios
-#include <pantheios/pantheios.hpp>
-#include <pantheios/inserters.hpp>
-#include <pantheios/implicit_link/core.h>
-#include <pantheios/implicit_link/fe.simple.h>
-#include <pantheios/implicit_link/be.lrsplit.h>
-#include <pantheios/implicit_link/bel.WindowsDebugger.h>
-#include <pantheios/implicit_link/ber.WindowsConsole.h>
+
 
 //VOLE
 #include <vole/vole.hpp>

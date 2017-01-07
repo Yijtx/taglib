@@ -12,8 +12,6 @@ HWND g_hwnd;
 TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 
-PANTHEIOS_EXTERN_C const PAN_CHAR_T PANTHEIOS_FE_PROCESS_IDENTITY[] = TEXT("taglib.cpp");
-
 // Forward declarations of functions included in this code module:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
 BOOL				InitInstance(HINSTANCE, int);
@@ -290,57 +288,90 @@ VOID OpenPath(LPCTSTR path)
 
 VOID testStlSoft()
 {
-	using std::cerr;
-	using std::cin;
-	using std::cout;
-	using std::endl;
+	using vole::object;
+	using vole::collection;
+	using vole::of_type;
+
+
+	// Q238393: Get CLSID for Word.Application ...
+	// VOLE: Don't need to do that
+	// Q238393: Start Word and get IDispatch...
+
+	// VOLE: Just create in a vole::object. No need to get raw IDispatch pointer.
+	//       Note that we must explicitly specify CLSCTX_LOCAL_SERVER, just as
+	//       in Q238393
+	object  word = object::create("Word.Application", CLSCTX_LOCAL_SERVER, vole::coercion_level::naturalPromotion);
 	try
 	{
-		using vole::collection;
-		using vole::object;
-		using vole::of_type;
+		// Q238393: Make Word visible
+		word.put_property(L"Visible", true);
 
-		object  loggerManager = object::create(L"pantheios.COM.LoggerManager");
-		assert(loggerManager.is_nothing() == true); //Indicates whether the instance is connected to a COM server
-		object  logger = loggerManager.invoke_method(of_type<object>(), L"GetLogger", L"Console", PANTHEIOS_FE_PROCESS_IDENTITY);
+		// Q238393: Get Documents collection
+		// VOLE: Rather than dealing with raw pointers, we just return an instance
+		//       of vole::collection.
+		collection  documents = word.get_property(of_type<collection>(), L"Documents");
 
-#if 1
-		logger.invoke_method_v(L"Log", 3, L"The answer is: ", 43);
-#else /* ? 0 */
-		logger.invoke_method<void>(L"Log", 3, L"The answer is: ", 43);
-#endif /* 0 */
+		// Q238393: Call Documents.Open() to open C:\Doc1.doc
 
-		std::string processId = logger.get_property(of_type<std::string>(), L"ProcessIdentity");
-
-		long        backEndId = logger.get_property(of_type<long>(), L"BackEndId");
-
-		logger.invoke_method_v(L"Log", 4, "abc(", L"DEF", "): ", 2319, " - ", 19.19, L" - ", std::string("yada!").c_str());
-
-		// Aliases
-		typedef comstl::enumerator_sequence<IEnumVARIANT
-			, VARIANT
-			, comstl::VARIANT_policy
-			, VARIANT const &
-			, comstl::input_cloning_policy<IEnumVARIANT>
-		>           enumerator_t;
-
-		collection      aliases = loggerManager.get_property(of_type<object>(), L"KnownLoggerAliases");
-
-		enumerator_t    en(aliases.get__NewEnum().get(), true);
-
-		{ for (enumerator_t::iterator b = en.begin(); b != en.end(); ++b)
+		// VOLE: Invoke the method, returning an instance of vole::object that holds
+		//       the document object.
+		object      document = documents.invoke_method(of_type<object>(), L"Open", L"D:\\Doc1.doc");
+		try
 		{
-			cout << "\t" << stlsoft::c_str_ptr(*b) << endl;
-		}}
+			// Q238393: Get BuiltinDocumentProperties collection
+			collection  builtInProps = document.get_property(of_type<collection>(), L"BuiltinDocumentProperties");
+#ifdef _DEBUG
+			int     numProps1 = builtInProps.get_Count();
+			double  numProps2 = builtInProps.get_property(of_type<double>(), L"Count");
 
-		STLSOFT_SUPPRESS_UNUSED(backEndId);
+			STLSOFT_SUPPRESS_UNUSED(numProps1);
+			STLSOFT_SUPPRESS_UNUSED(numProps2);
+#endif /* _DEBUG */
+
+
+			// Q238393: Get "Subject" from BuiltInDocumentProperties.Item("Subject")
+			object      propSubject = builtInProps.get_property(of_type<object>(), L"Item", L"Subject");
+
+			// Q238393: Get the Value of the Subject property and display it
+			std::string subject = propSubject.get_property(of_type<std::string>(), L"Value");
+			std::cout << "Subject property: \"" << subject << '"' << std::endl;
+
+			// Q238393: Set the Value of the Subject DocumentProperty
+			propSubject.put_property(L"Value", "This is my subject");
+
+			// Q238393: Get CustomDocumentProperties collection
+			collection  customProps = document.get_property(of_type<collection>(), L"CustomDocumentProperties");
+			
+			// Q238393: Add a new property named "CurrentYear"
+			customProps.invoke_method_v(L"Add", L"CurrentYear", false, 1, 1999);
+
+			// Q238393: Get the custom property "CurrentYear" and delete it
+			object      propCurrYear = customProps.get_property(of_type<object>(), L"Item", L"CurrentYear");
+
+			propCurrYear.invoke_method_v(L"Delete");
+
+			// Q238393: Close the document without saving changes and quit Word
+			document.invoke_method_v(L"Close", false);
+
+			word.invoke_method_v(L"Quit");
+		}
+		catch (comstl::com_exception&)
+		{
+			try
+			{
+				document.invoke_method_v(L"Close", false);
+			}
+			catch (...)
+			{
+			}
+
+			throw;
+		}
 	}
-	catch (comstl::com_exception &x)
+	catch (comstl::com_exception&)
 	{
-		cerr << "COM error: " << x.what() << ": " << winstl::error_desc(x.hr()).c_str() << endl;
-	}
-	catch (std::exception &x)
-	{
-		cerr << x.what() << endl;
+		word.invoke_method_v(L"Quit");
+
+		throw;
 	}
 }
