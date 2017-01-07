@@ -4,6 +4,10 @@
 #include "stdafx.h"
 #include "taglib.h"
 
+
+using namespace google;
+
+
 #define MAX_LOADSTRING 100
 
 // Global Variables:
@@ -43,6 +47,13 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
  	// TODO: Place code here.
 	MSG msg;
 	HACCEL hAccelTable;
+
+	InitGoogleLogging("taglib.exe");
+	FLAGS_logfile_mode = true;
+	FLAGS_stderrthreshold = google::GLOG_INFO;
+	FLAGS_log_dir = "./logs";
+
+	LOG(INFO) << "RegisterClass....";
 
 	// Initialize global strings
 	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -125,10 +136,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    g_hwnd = hWnd;
 
    //Win32FuncLearn();
-      //read prev properties
 
+   LOG(INFO) << "Init Window...ShowWindow";
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
+   LOG(INFO) << "Init Window...UpdateWindow";
 
    //testWinFile();
    //testCopyFile();
@@ -288,6 +300,7 @@ VOID OpenPath(LPCTSTR path)
 
 VOID testStlSoft()
 {
+	LOG(INFO) << "into testStlSoft...";
 	using vole::object;
 	using vole::collection;
 	using vole::of_type;

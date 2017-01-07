@@ -50,7 +50,10 @@
 #include <comstl/util/variant.hpp>              // for comstl::variant (step 2.2)
 #include <stlsoft/smartptr/ref_ptr.hpp>         // for stlsoft::ref_ptr (steps 2, 2.1 and 2.3)
 
-//pantheios
+//glog
+#define GLOG_NO_ABBREVIATED_SEVERITIES
+#include <glog/logging.h>
+#include <glog/raw_logging.h>
 
 
 //VOLE
