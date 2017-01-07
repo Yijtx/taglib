@@ -12,6 +12,8 @@ HWND g_hwnd;
 TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 
+PANTHEIOS_EXTERN_C const PAN_CHAR_T PANTHEIOS_FE_PROCESS_IDENTITY[] = TEXT("taglib.cpp");
+
 // Forward declarations of functions included in this code module:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
 BOOL				InitInstance(HINSTANCE, int);
@@ -28,6 +30,8 @@ VOID OpenPath(LPCTSTR path);
 VOID testWinFile();
 VOID testCopyFile();
 
+//stlsoft
+VOID testStlSoft();
 
 
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
@@ -128,8 +132,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 
-   testWinFile();
-   testCopyFile();
+   //testWinFile();
+   //testCopyFile();
+   testStlSoft();
 
    return TRUE;
 }
@@ -281,4 +286,61 @@ VOID OpenPath(LPCTSTR path)
 	TCHAR selecPath[MAX_PATH] = TEXT("/select, ");
 	_tcscat(selecPath, path);
 	ShellExecute(NULL, _T("open"), _T("explorer.exe"), selecPath, NULL, SW_SHOWNORMAL);
+}
+
+VOID testStlSoft()
+{
+	using std::cerr;
+	using std::cin;
+	using std::cout;
+	using std::endl;
+	try
+	{
+		using vole::collection;
+		using vole::object;
+		using vole::of_type;
+
+		object  loggerManager = object::create(L"pantheios.COM.LoggerManager");
+		assert(loggerManager.is_nothing() == true); //Indicates whether the instance is connected to a COM server
+		object  logger = loggerManager.invoke_method(of_type<object>(), L"GetLogger", L"Console", PANTHEIOS_FE_PROCESS_IDENTITY);
+
+#if 1
+		logger.invoke_method_v(L"Log", 3, L"The answer is: ", 43);
+#else /* ? 0 */
+		logger.invoke_method<void>(L"Log", 3, L"The answer is: ", 43);
+#endif /* 0 */
+
+		std::string processId = logger.get_property(of_type<std::string>(), L"ProcessIdentity");
+
+		long        backEndId = logger.get_property(of_type<long>(), L"BackEndId");
+
+		logger.invoke_method_v(L"Log", 4, "abc(", L"DEF", "): ", 2319, " - ", 19.19, L" - ", std::string("yada!").c_str());
+
+		// Aliases
+		typedef comstl::enumerator_sequence<IEnumVARIANT
+			, VARIANT
+			, comstl::VARIANT_policy
+			, VARIANT const &
+			, comstl::input_cloning_policy<IEnumVARIANT>
+		>           enumerator_t;
+
+		collection      aliases = loggerManager.get_property(of_type<object>(), L"KnownLoggerAliases");
+
+		enumerator_t    en(aliases.get__NewEnum().get(), true);
+
+		{ for (enumerator_t::iterator b = en.begin(); b != en.end(); ++b)
+		{
+			cout << "\t" << stlsoft::c_str_ptr(*b) << endl;
+		}}
+
+		STLSOFT_SUPPRESS_UNUSED(backEndId);
+	}
+	catch (comstl::com_exception &x)
+	{
+		cerr << "COM error: " << x.what() << ": " << winstl::error_desc(x.hr()).c_str() << endl;
+	}
+	catch (std::exception &x)
+	{
+		cerr << x.what() << endl;
+	}
 }
