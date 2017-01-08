@@ -3,6 +3,11 @@
 
 #include "stdafx.h"
 #include "taglib.h"
+#include "FileVersionInfo.h"
+
+
+//ver.dll
+#pragma comment(lib,"Version.lib")
 
 
 using namespace google;
@@ -35,6 +40,19 @@ VOID testCopyFile();
 //stlsoft
 VOID testStlSoft();
 
+
+//xlib
+BOOL GetIsWOW64();
+LPCTSTR GetRegSrvPath();
+LPCTSTR GetSystem32Dir();
+LPCTSTR GetAppDataDir();
+BOOL FixPathLastSpec(LPTSTR lpPath);
+
+
+//class test
+VOID FileVersioInfoClassTest();
+
+LPCTSTR GetTempDir();
 
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -144,7 +162,17 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    //testWinFile();
    //testCopyFile();
-   testStlSoft();
+   //testStlSoft();
+   //GetIsWOW64();
+   //OpenPath(GetRegSrvPath());
+   //LPCTSTR appDataDir = GetAppDataDir();
+
+   //LPCTSTR tempDir = GetTempDir();
+   //MessageBox(hWnd, tempDir, TEXT("TempDir"), MB_OK | MB_ICONEXCLAMATION);
+   FileVersioInfoClassTest();
+
+
+
 
    return TRUE;
 }
@@ -387,4 +415,110 @@ VOID testStlSoft()
 
 		throw;
 	}
+}
+
+BOOL GetIsWOW64()
+{
+	HMODULE hLib;
+	BOOL bNeedFree = FALSE;
+	BOOL bRet = FALSE;
+
+	hLib = GetModuleHandle(_T("shlwapi.dll"));
+	if (hLib == NULL)
+	{
+		hLib = LoadLibrary(_T("shlwapi.dll"));
+		bNeedFree = TRUE;
+	}
+
+	if (hLib)
+	{
+		BOOL(__stdcall* pfnIsOS)(DWORD dwVer);
+
+		(FARPROC&)pfnIsOS = GetProcAddress(hLib, MAKEINTRESOURCEA(437));
+		if (pfnIsOS)
+		{
+			bRet = pfnIsOS(30);
+		}
+
+		if (bNeedFree)
+			FreeLibrary(hLib);
+
+		SetLastError(ERROR_SUCCESS);
+	}
+	else
+	{
+		SetLastError(ERROR_OLD_WIN_VERSION);
+	}
+
+	return bRet;
+}
+
+LPCTSTR GetRegSrvPath()
+{
+	static	TCHAR	szPath[MAX_PATH] = { 0 };
+	if (szPath[0] == 0)
+	{
+		LPCTSTR	lpWinPath = GetSystem32Dir();
+		_sntprintf_s(szPath, MAX_PATH, _T("%s\\regsvr32.exe"), lpWinPath);
+	}
+	return szPath;
+}
+
+LPCTSTR GetSystem32Dir()
+{
+	static	TCHAR	szPath[MAX_PATH] = { 0 };
+	if (szPath[0] == 0)
+	{
+		GetSystemDirectory(szPath, MAX_PATH);
+	}
+	return szPath;
+}
+
+LPCTSTR GetAppDataDir()
+{
+	static	TCHAR	szPath[MAX_PATH] = { 0 };
+	if (szPath[0] == 0)
+	{
+		SHGetSpecialFolderPath(NULL, szPath, CSIDL_APPDATA, FALSE);
+		FixPathLastSpec(szPath);
+	}
+	return szPath;
+}
+
+BOOL FixPathLastSpec(LPTSTR lpPath)
+{
+	if (lpPath == NULL)
+		return FALSE;
+
+	size_t	nLen = _tcslen(lpPath);
+	if (nLen > 1)
+	{
+		if (lpPath[nLen - 1] == _T('\\'))
+			lpPath[nLen - 1] = 0;
+
+		return TRUE;
+	}
+	return FALSE;
+}
+
+LPCTSTR GetTempDir()
+{
+	static	TCHAR	szPath[MAX_PATH] = { 0 };
+	if (szPath[0] == 0)
+	{
+		GetTempPath(MAX_PATH, szPath);
+		FixPathLastSpec(szPath);
+	}
+	return szPath;
+}
+
+
+VOID FileVersioInfoClassTest()
+{
+	FileVersionInfo fileVersionInfo;
+
+	fileVersionInfo.Create(TEXT("c:\\windows\\system32\\VERSION.DLL"));
+	CString legalCopyright = fileVersionInfo.GetLegalCopyright();
+	CString fileComment = fileVersionInfo.GetComments();
+	FILETIME fileDate = fileVersionInfo.GetFileDate();
 }
