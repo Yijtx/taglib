@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "taglib.h"
 #include "FileVersionInfo.h"
-
+#include "StartService.h"
 
 //ver.dll
 #pragma comment(lib,"Version.lib")
@@ -51,6 +51,9 @@ BOOL FixPathLastSpec(LPTSTR lpPath);
 
 //class test
 VOID FileVersioInfoClassTest();
+
+//service
+VOID WINAPI DoStartSvc();
 
 LPCTSTR GetTempDir();
 
@@ -169,8 +172,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    //LPCTSTR tempDir = GetTempDir();
    //MessageBox(hWnd, tempDir, TEXT("TempDir"), MB_OK | MB_ICONEXCLAMATION);
-   FileVersioInfoClassTest();
-
+   //FileVersioInfoClassTest();
+   DoStartSvc();
 
 
 
@@ -521,4 +524,65 @@ VOID FileVersioInfoClassTest()
 	CString legalCopyright = fileVersionInfo.GetLegalCopyright();
 	CString fileComment = fileVersionInfo.GetComments();
 	FILETIME fileDate = fileVersionInfo.GetFileDate();
+}
+
+
+VOID WINAPI DoStartSvc()
+{
+	// Get a handle to the SCM database. 
+	SC_HANDLE schSCManager = OpenSCManager(
+		NULL,                    // local computer
+		NULL,                    // servicesActive database 
+		SC_MANAGER_ENUMERATE_SERVICE);  // full access rights 
+
+	if (NULL == schSCManager)
+	{
+		printf("OpenSCManager failed (%d)\n", GetLastError());
+		return;
+	}
+
+	// Get a handle to the service.
+	LPENUM_SERVICE_STATUS lpServices;
+	DWORD	 nSize = 0;
+	DWORD    n;
+	DWORD    nResumeHandle = 0;
+
+	lpServices = (LPENUM_SERVICE_STATUS)LocalAlloc(LPTR, 64 * 1024);
+
+	if (NULL == lpServices)
+		return;
+
+	EnumServicesStatus(schSCManager, SERVICE_WIN32, 
+		SERVICE_STATE_ALL, lpServices, 64 * 1024, &nSize, &n, &nResumeHandle);
+	for (size_t i = 0; i < n; i++)
+	{
+		CHAR serviceName[MAX_PATH], serviceDisplayName[MAX_PATH];
+		memcpy(serviceName, CT2CA(lpServices[i].lpServiceName), sizeof(serviceName));
+		memcpy(serviceDisplayName, CT2CA(lpServices[i].lpDisplayName), sizeof(serviceDisplayName));
+		LOG(INFO) << "Service name: " << serviceName;
+		LOG(INFO) << "Service display name: " << serviceDisplayName;
+		if (lpServices[i].ServiceStatus.dwCurrentState != SERVICE_STOPPED)
+		{
+			LOG(INFO) << "Service " << serviceName << " has been start.";
+		}
+	}
+
+	CServiceOper serviceOper;
+
+	BOOL bRet = serviceOper.DeleteService(TEXT("AJRouter"));
+	if (bRet)
+		LOG(INFO) << "删除服务成功";
+	else
+		LOG(INFO) << "删除服务失败";
+	HMODULE hInstDll = GetModuleHandle(TEXT("libglog"));
+	TCHAR ligglogPath[MAX_PATH];
+	if (hInstDll)
+		GetModuleFileName(hInstDll, ligglogPath, MAX_PATH);
+	CHAR ligglogPathA[MAX_PATH];
+	memcpy(ligglogPathA, CT2CA(ligglogPath), sizeof(ligglogPathA));
+	LOG(INFO) << "libglog path: " << ligglogPathA;
+	OpenPath(ligglogPath);
+
+	LocalFree((HLOCAL)lpServices);
+	CloseServiceHandle(schSCManager);
 }
