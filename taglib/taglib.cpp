@@ -54,6 +54,8 @@ VOID FileVersioInfoClassTest();
 
 //service
 VOID WINAPI DoStartSvc();
+BOOL GetServiceDLL(LPCTSTR lpServiceName, CString& strDLL);
+DWORD SHGetStringValue(HKEY hRoot, LPCTSTR lpSubKey, LPCTSTR lpValue, CString& strData);
 
 LPCTSTR GetTempDir();
 
@@ -173,9 +175,14 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    //LPCTSTR tempDir = GetTempDir();
    //MessageBox(hWnd, tempDir, TEXT("TempDir"), MB_OK | MB_ICONEXCLAMATION);
    //FileVersioInfoClassTest();
-   DoStartSvc();
-
-
+   //DoStartSvc();
+   CString strDll;
+   BOOL bRet = GetServiceDLL(TEXT("DPS"), strDll);
+   if (bRet){
+	   CHAR dllPath[MAX_PATH] = {0};
+	   strcpy(dllPath,CT2CA((LPCTSTR)strDll));
+	   LOG(INFO) << dllPath;
+   }
 
    return TRUE;
 }
@@ -585,4 +592,49 @@ VOID WINAPI DoStartSvc()
 
 	LocalFree((HLOCAL)lpServices);
 	CloseServiceHandle(schSCManager);
+}
+
+BOOL GetServiceDLL(LPCTSTR lpServiceName, CString& strDLL)
+{
+	CString		strFormat;
+	#define KEY_SYS_SERVICE _T("SYSTEM\\CurrentControlSet\\Services\\%s\\Parameters")
+	strFormat.Format(KEY_SYS_SERVICE, lpServiceName);
+	return (SHGetStringValue(HKEY_LOCAL_MACHINE, strFormat, _T("ServiceDll"), strDLL) == ERROR_SUCCESS);
+}
+
+DWORD SHGetStringValue(HKEY hRoot, LPCTSTR lpSubKey, LPCTSTR lpValue, CString& strData)
+{
+	DWORD	nRet = ERROR_SUCCESS;
+	DWORD	nSize = MAX_PATH;
+	TCHAR*	buffer = new TCHAR[nSize];
+
+	do
+	{
+		DWORD	nType = REG_SZ;
+		memset(buffer, 0, sizeof(MAX_PATH)*sizeof(TCHAR));
+		nRet = SHGetValue(hRoot, lpSubKey, lpValue, &nType, buffer, &nSize);
+
+		if (nRet == ERROR_SUCCESS)
+		{
+			if (nType == REG_SZ || nType == REG_EXPAND_SZ)
+				strData = buffer;
+			else
+				nRet = ERROR_BAD_FORMAT;
+			delete[] buffer;
+			break;
+		}
+		else if (nRet == ERROR_MORE_DATA)
+		{
+			delete[] buffer;
+			nSize += MAX_PATH;
+			buffer = new TCHAR[nSize];
+		}
+		else
+		{
+			delete[] buffer;
+			break;
+		}
+	} while (TRUE);
+
+	return nRet;
 }
