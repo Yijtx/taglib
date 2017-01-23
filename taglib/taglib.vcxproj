@@ -144,6 +144,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ChoseFileDialog.h" />
     <ClInclude Include="FileVersionInfo.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="StartService.h" />
@@ -153,6 +154,7 @@
     <ClInclude Include="WinFile.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ChoseFileDialog.cpp" />
     <ClCompile Include="FileVersionInfo.cpp" />
     <ClCompile Include="StartService.cpp" />
     <ClCompile Include="stdafx.cpp">

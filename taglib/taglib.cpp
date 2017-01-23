@@ -5,6 +5,7 @@
 #include "taglib.h"
 #include "FileVersionInfo.h"
 #include "StartService.h"
+#include "ChoseFileDialog.h"
 
 //ver.dll
 #pragma comment(lib,"Version.lib")
@@ -183,7 +184,16 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	   strcpy(dllPath,CT2CA((LPCTSTR)strDll));
 	   LOG(INFO) << dllPath;
    }
+   TCHAR dirPath[MAX_PATH];
 
+   BOOL fRet = ChooseDirectory(hWnd, TEXT("Ñ¡ÔñÎÄ¼þ¼Ð"), dirPath);
+   if (fRet){
+	   CHAR selectDirPath[MAX_PATH];
+	   memset(selectDirPath,0,sizeof(selectDirPath));
+	   memcpy(selectDirPath, CT2CA(dirPath), sizeof(selectDirPath));
+	   LOG(INFO) << selectDirPath;
+   }
+   
    return TRUE;
 }
 
